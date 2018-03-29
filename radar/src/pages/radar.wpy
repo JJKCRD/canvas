@@ -1,0 +1,140 @@
+<style>
+.radar-canvas {
+  width: 750rpx;
+  height: 650rpx;
+}
+</style>
+
+<template>
+  <view>
+    <canvas class="radar-canvas" canvas-id="radarCanvas" disable-scroll="false" />
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+var windowW = wx.getSystemInfoSync().windowWidth;
+var centerPointX =  windowW / 2;
+var centerPointY = centerPointX; 
+export default class Radar extends wepy.page {
+  data = {
+    radius: centerPointX - this.rpx(200),//半径，减去的部分为文字留空位
+    radarData: [
+      {desc:"动漫",value:"0.6"},
+      {desc:"体育",value:"0.5"},
+      {desc:"旅游",value:"0.8"},
+      {desc:"游戏",value:"0.5"},
+      {desc:"学习",value:"0.3"}
+    ]    
+  };
+
+  onLoad() {}
+
+  onShow() {
+    var ctx = wx.createCanvasContext("radarCanvas");
+    var sideNum = this.radarData.length;
+    var angle = Math.PI * 2 / sideNum;
+    this.drawPolygon(ctx, sideNum, angle);
+    this.drawRib(ctx, sideNum, angle);
+    this.addTags(ctx, this.radarData, sideNum, angle);
+    this.addDataPoint(ctx, this.radarData, sideNum, angle);
+    this.linePoint(ctx, this.radarData, sideNum, angle);
+    ctx.draw(false);
+  }
+
+//draw polygon
+  drawPolygon(ctx, sideNum, angle) {
+    ctx.setStrokeStyle("rgb(83,139,81)");
+    var r = this.radius / 5; //单位半径
+    for (var i = 1; i < 5; i++) {
+      ctx.beginPath();
+      var currR = r * (i + 1); //当前半径
+      for (var j = 0; j < sideNum; j++) {
+        var x = centerPointX + currR * Math.cos(angle * j + Math.PI / 3.3);//Math.PI/3.3是为了调整图形的偏移量，可自行设置
+        var y = centerPointY + currR * Math.sin(angle * j + Math.PI / 3.3);
+        ctx.lineTo(x, y);
+      }
+      ctx.setLineDash([2, 2]);//虚线
+      ctx.closePath();
+      ctx.stroke();     
+    }
+  }
+  //draw rib
+  drawRib(ctx, sideNum, angle) {
+    ctx.setStrokeStyle("#cdcdcd");
+    ctx.beginPath();
+    for (var i = 0; i < sideNum; i++) {
+      var x = centerPointX + this.radius * Math.cos(angle * i + Math.PI / 3.3);
+      var y = centerPointY + this.radius * Math.sin(angle * i + Math.PI / 3.3);
+      ctx.moveTo(centerPointX, centerPointY);
+      ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+  }
+  //add radar description
+  addTags(ctx, radarData, sideNum, angle) {
+    ctx.setFontSize(this.rpx(30));
+    ctx.setFillStyle("rgb(95, 153, 32)");
+    //确定文本位置，可以根据微信小程序文档中的具体方法来设置
+    for (var i = 0; i < sideNum; i++) {
+      var x = parseInt(
+        centerPointX + this.radius * Math.cos(angle * i + Math.PI / 3.3)
+      );
+      var y = parseInt(
+        centerPointY + this.radius * Math.sin(angle * i + Math.PI / 3.3)
+      );
+      var center = parseInt(centerPointX);
+      var centerY = parseInt(centerPointY);
+      if (x < center && y < centerY) {
+        ctx.setTextAlign("left");
+        ctx.fillText(radarData[i].desc, x - this.rpx(120), y);
+      } else if (x - this.rpx(20) > center && y < centerY) {
+        ctx.setTextAlign("right");
+        ctx.fillText(radarData[i].desc, x + this.rpx(120), y);
+      } else if (y > centerY) {
+        ctx.setTextAlign("center");
+        ctx.fillText(radarData[i].desc, x, y + this.rpx(80));
+      } else {
+        ctx.setTextAlign("center");
+        ctx.fillText(radarData[i].desc, x, y - this.rpx(40));
+      }
+    }
+  }
+  //add  dataPoint
+  addDataPoint(ctx, radarData, sideNum, angle) {
+    for (var i = 0; i < sideNum; i++) {
+      var x = centerPointX + this.radius * Math.cos(angle * i + Math.PI / 3.3) * radarData[i].value;
+      var y = centerPointY + this.radius * Math.sin(angle * i + Math.PI / 3.3) * radarData[i].value;
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, 2 * Math.PI);
+      ctx.setFillStyle("rgb(0, 91, 51)");
+      ctx.fill();
+      ctx.closePath();
+    }
+  }
+  //line point
+  linePoint(ctx, radarData, sideNum, angle) {
+    ctx.setStrokeStyle("rgb(83, 139, 81)");
+    ctx.beginPath();
+    for (var i = 0; i < sideNum; i++) {
+      var x =
+        centerPointX +
+        this.radius * Math.cos(angle * i + Math.PI / 3.3) * radarData[i].value;
+      var y =
+        centerPointY +
+        this.radius * Math.sin(angle * i + Math.PI / 3.3) * radarData[i].value;
+      ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.setFillStyle("rgba(0,91,51,0.2)");//填充色
+    ctx.fill();//填充
+    ctx.stroke();
+  }
+  //adapt window size wechat size unit rpx
+  rpx(param) {
+    return Number((windowW / 750 * param).toFixed(2));
+  }
+
+}
+</script>
