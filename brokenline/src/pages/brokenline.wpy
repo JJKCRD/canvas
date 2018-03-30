@@ -1,0 +1,174 @@
+<style>
+.brokenline-canvas {
+  width: 750rpx;
+  height: 750rpx;
+}
+</style>
+
+<template>
+  <view>
+    <canvas class="brokenline-canvas" canvas-id="brokenlineCanvas" disable-scroll="false"/>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+var windowW = wx.getSystemInfoSync().windowWidth;
+var windowH = wx.getSystemInfoSync().windowHeight;
+export default class Brokenline extends wepy.page {
+  data = {
+    originPointX: windowW * 0.15,
+    originPointY: windowH * 0.4,
+    endYPointY: windowH * 0.15,
+    endXPointX: windowW * 0.85,
+    brokenlineData: [
+      { desc: "7月", value: "200" },
+      { desc: "8月", value: "450" },
+      { desc: "9月", value: "300" },
+      { desc: "10月", value: "100" },
+      { desc: "11月", value: "350" }
+    ]
+  };
+
+  onLoad() {}
+
+  onShow() {
+    var ctx = wx.createCanvasContext("brokenlineCanvas");
+    this.drawAxes(
+      ctx,
+      this.originPointX,
+      this.originPointY,
+      this.endXPointX,
+      this.endYPointY
+    );
+    this.addDesc(
+      ctx,
+      this.brokenlineData,
+      this.originPointX,
+      this.originPointY,
+      this.endXPointX,
+      this.endYPointY
+    );
+    this.addPoint(
+      ctx,
+      this.brokenlineData,
+      this.originPointX,
+      this.originPointY,
+      this.endXPointX,
+      this.endYPointY
+    );
+    this.addValueLine(
+      ctx,
+      this.brokenlineData,
+      this.originPointX,
+      this.originPointY,
+      this.endXPointX,
+      this.endYPointY
+    );
+    ctx.draw();
+  }
+
+  //draw X and Y axis
+  drawAxes(ctx, originPointX, originPointY, endXPointX, endYPointY) {
+    ctx.beginPath();
+    //draw X axis
+    ctx.moveTo(originPointX, originPointY);
+    ctx.lineTo(endXPointX, originPointY);
+    ctx.moveTo(endXPointX, originPointY); //draw arrow
+    ctx.lineTo(endXPointX - 5, originPointY - 5);
+    ctx.moveTo(endXPointX, originPointY);
+    ctx.lineTo(endXPointX - 5, originPointY + 5);
+    //draw Y axis
+    ctx.moveTo(originPointX, originPointY);
+    ctx.lineTo(originPointX, endYPointY);
+    ctx.moveTo(originPointX, endYPointY); //draw arrow
+    ctx.lineTo(originPointX - 5, endYPointY + 5);
+    ctx.moveTo(originPointX, endYPointY);
+    ctx.lineTo(originPointX + 5, endYPointY + 5);
+
+    ctx.closePath();
+    ctx.setStrokeStyle("rgb(0,0,0)");
+    ctx.stroke();
+  }
+  //add X desc and Y data,
+  addDesc(
+    ctx,
+    brokenlineData,
+    originPointX,
+    originPointY,
+    endXPointX,
+    endYPointY
+  ) {
+    var YData = ["100", "200", "300", "400", "500"];
+    ctx.beginPath();
+    //add X axis desc
+    for (var i = 0; i < brokenlineData.length; i++) {
+      var x = (endXPointX - originPointX) / brokenlineData.length * i + originPointX;
+      ctx.setTextAlign("center");
+      ctx.fillText(brokenlineData[i].desc, x, originPointY + 10);
+    //   ctx.moveTo(x, originPointY);
+    //   ctx.lineTo(x, endYPointY);
+    }
+    //add Y axis data,根据实际情况变更Y轴数据，这里我YMax取500，单位距离100，则有5个间距
+    for (var i = 0; i < YData.length; i++) {
+      var y =
+        (endYPointY - originPointY) / YData.length * (i + 1) + originPointY;
+      ctx.setTextAlign("left");
+      ctx.fillText(YData[i], originPointX - 20, y + 10);
+    //   ctx.moveTo(originPointX, y);
+    //   ctx.lineTo(endXPointX, y);
+    }
+    ctx.closePath();
+    ctx.setStrokeStyle("rgb(151,151,151)");
+    ctx.stroke();
+  }
+  //add data point
+  addPoint(
+    ctx,
+    brokenlineData,
+    originPointX,
+    originPointY,
+    endXPointX,
+    endYPointY
+    ) {
+    //根据YMax和value取比来找出dataPoint的Y坐标
+    var YMax = 500;
+    for(var i=0;i<brokenlineData.length;i++) {
+      var x = (endXPointX - originPointX) / brokenlineData.length * i + originPointX;
+      var y = (endYPointY - originPointY)*(brokenlineData[i].value / YMax) + originPointY;
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, 2*Math.PI);
+      ctx.setFillStyle("rgb(0,91,51)");
+      ctx.fill();
+      ctx.closePath();      
+    }     
+  }
+  //add value and line point
+  addValueLine(
+    ctx,
+    brokenlineData,
+    originPointX,
+    originPointY,
+    endXPointX,
+    endYPointY
+    ) {
+    //根据YMax和value取比来找出dataPoint的Y坐标
+    var YMax = 500;
+    ctx.setStrokeStyle("rgb(0,91,51)");
+    for(var i=0;i<brokenlineData.length;i++) {
+      var x = (endXPointX - originPointX) / brokenlineData.length * i + originPointX;
+      var y = (endYPointY - originPointY)*(brokenlineData[i].value / YMax) + originPointY;
+      if(i+1 < brokenlineData.length){
+        var nextX = (endXPointX - originPointX) / brokenlineData.length * (i+1) + originPointX;
+        var nextY = (endYPointY - originPointY)*(brokenlineData[i+1].value / YMax) + originPointY;
+        ctx.moveTo(x,y);
+        ctx.lineTo(nextX,nextY);
+        ctx.stroke();
+      }
+      ctx.setTextAlign("center");
+      ctx.fillText(brokenlineData[i].value, x, y-10);
+    }  
+  }
+}
+</script>
+
