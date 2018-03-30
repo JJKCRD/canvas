@@ -1,0 +1,132 @@
+<style>
+.barGraph-canvas {
+  width: 750rpx;
+  height: 750rpx;
+}
+</style>
+
+<template>
+  <view>
+    <canvas class="barGraph-canvas" canvas-id="barGraphCanvas" disable-scroll="false"/>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+var windowW = wx.getSystemInfoSync().windowWidth;
+var windowH = wx.getSystemInfoSync().windowHeight;
+export default class Bargraph extends wepy.page {
+  data = {
+    originPointX: windowW * 0.15,
+    originPointY: windowH * 0.4,
+    endYPointY: windowH * 0.15,
+    endXPointX: windowW * 0.85,
+    barGraphData: [
+      { desc: "7月", value: "200" },
+      { desc: "8月", value: "450" },
+      { desc: "9月", value: "300" },
+      { desc: "10月", value: "100" },
+      { desc: "11月", value: "350" }
+    ]
+  };
+
+  onLoad() {}
+
+  onShow() {
+    var ctx = wx.createCanvasContext("barGraphCanvas");
+    this.drawAxes(
+      ctx,
+      this.originPointX,
+      this.originPointY,
+      this.endXPointX,
+      this.endYPointY
+    );
+    this.addDesc(
+      ctx,
+      this.barGraphData,
+      this.originPointX,
+      this.originPointY,
+      this.endXPointX,
+      this.endYPointY
+    );
+    this.drawColumn(
+      ctx,
+      this.barGraphData,
+      this.originPointX,
+      this.originPointY,
+      this.endXPointX,
+      this.endYPointY
+    );
+    ctx.draw();
+  }
+
+  //line function
+  line(ctx,x1,y1,x2,y2) {
+    ctx.moveTo(x1,y1);
+    ctx.lineTo(x2,y2);
+  }
+  //draw X and Y axis
+  drawAxes(ctx, originPointX, originPointY, endXPointX, endYPointY) {
+    ctx.beginPath();
+    //draw X axis
+    this.line(ctx, originPointX, originPointY, endXPointX, originPointY);
+    this.line(ctx, endXPointX, originPointY, endXPointX - 5, originPointY - 5);//draw arrow
+    this.line(ctx, endXPointX, originPointY, endXPointX - 5, originPointY + 5)
+    //draw Y axis
+    this.line(ctx, originPointX, originPointY, originPointX, endYPointY-20);
+    this.line(ctx, originPointX, endYPointY-20, originPointX - 5, endYPointY - 15);//draw arrow
+    this.line(ctx, originPointX, endYPointY-20, originPointX + 5, endYPointY - 15);
+    ctx.closePath();
+    ctx.setStrokeStyle("rgb(0,0,0)");
+    ctx.stroke();
+  }
+  //add X desc and Y data,
+  addDesc(
+    ctx,
+    barGraphData,
+    originPointX,
+    originPointY,
+    endXPointX,
+    endYPointY
+  ) {
+    var YData = ["100", "200", "300", "400", "500"];
+    ctx.beginPath();
+    //add X axis desc
+    for (var i = 0; i < barGraphData.length; i++) {
+      var x = (endXPointX - originPointX) / barGraphData.length * i + originPointX;
+      ctx.setTextAlign("center");
+      ctx.fillText(barGraphData[i].desc, x+25, originPointY + 10);//设置文字位置
+    }
+    //add Y axis data,根据实际情况变更Y轴数据，这里我YMax取500，单位距离100，则有5个间距
+    for (var i = 0; i < YData.length; i++) {
+      var y =
+        (endYPointY - originPointY) / YData.length * (i + 1) + originPointY;
+      ctx.setTextAlign("left");
+      ctx.fillText(YData[i], originPointX - 20, y );
+    }
+    ctx.closePath();
+  }
+
+  //draw column
+  drawColumn(ctx, barGraphData, originPointX, originPointY, endXPointX, endYPointY) {
+    var YMax = 500;
+    ctx.beginPath();
+    ctx.setStrokeStyle("rgb(217,198,26)");
+    for (var i = 0; i < barGraphData.length; i++) {
+      var x = (endXPointX - originPointX) / barGraphData.length * i + originPointX;
+      var y = (endYPointY - originPointY) * (barGraphData[i].value / YMax) + originPointY;
+      this.line(ctx,x+15,originPointY,x+15,y);
+      ctx.lineTo(x+35,y);
+      ctx.lineTo(x+35,originPointY);
+      ctx.setFillStyle("rgb(217,198,26)");
+      ctx.fill();
+      ctx.setTextBaseline("bottom");
+      ctx.setTextAlign("center");
+      ctx.fillText(barGraphData[i].value,x+25,y);
+    }
+    ctx.closePath();
+    ctx.stroke();    
+  }
+}
+</script>
+
